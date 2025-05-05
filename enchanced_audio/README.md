@@ -1,4 +1,3 @@
-```markdown
 # Enhanced_Audio
 
 **Enhanced_Audio** is a cog for Redbot that enhances the original Audio cog. It replaces and improves some of the default Audio commands, providing a better user experience when controlling music playback.
@@ -50,4 +49,3 @@ This cog uses Redbot’s configuration system to store per-guild settings such a
 ## Contributing
 
 Contributions are welcome! If you'd like to suggest improvements or report issues, please open an issue or submit a pull request on this repository.
-```
