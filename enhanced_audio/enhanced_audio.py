@@ -584,38 +584,39 @@ class EnhancedAudio(commands.Cog):
             )
             return
         try:
-            last_message = self.last_messages.get(ctx.guild.id)
-            if last_message:
-                try:
-                    await last_message.channel.fetch_message(last_message.id)
-                    view = EnhancedAudioView(self, ctx)
-                    view.message = last_message
-                    await view.start()
-                    await view.update_now_playing()
-                    await self.original_cog.command_play(ctx, query=query)
-                    return
-                except discord.NotFound:
-                    pass
-            embed = discord.Embed(
-                title="🔍 Searching", description=f"`{query}`", color=0x3498DB
-            )
-            embed.set_footer(text="Please wait while we search for the track...")
-            message = await ctx.send(embed=embed)
-            self.last_activity[ctx.guild.id] = time.time()
-            self.last_messages[ctx.guild.id] = message
             await self.original_cog.command_play(ctx, query=query)
             player = lavalink.get_player(ctx.guild.id)
             if player.current:
+                last_message = self.last_messages.get(ctx.guild.id)
                 view = EnhancedAudioView(self, ctx)
+                if last_message:
+                    try:
+                        await last_message.channel.fetch_message(last_message.id)
+                        view.message = last_message
+                        await view.start()
+                        await view.update_now_playing()
+                        await last_message.edit(view=view)
+                        return
+                    except discord.NotFound:
+                        pass
+                initial_embed = discord.Embed(
+                    title="🎵 Now Playing",
+                    description="Loading track information...",
+                    color=0x3498DB,
+                )
+                message = await ctx.send(embed=initial_embed, view=view)
                 view.message = message
+                self.last_activity[ctx.guild.id] = time.time()
+                self.last_messages[ctx.guild.id] = message
                 await view.start()
                 await view.update_now_playing()
-                await message.edit(view=view)
             else:
-                embed.title = "❌ Playback Failed"
-                embed.description = "Could not play the requested track."
-                embed.color = 0xE74C3C
-                await message.edit(embed=embed)
+                embed = discord.Embed(
+                    title="❌ Playback Failed",
+                    description="Could not play the requested track.",
+                    color=0xE74C3C,
+                )
+                await ctx.send(embed=embed)
         except Exception as e:
             log.error(f"Error in eplay command: {e}")
             try:
