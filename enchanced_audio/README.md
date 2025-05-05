@@ -23,7 +23,7 @@ O **EnhancedAudio** é um cog para o Redbot que aprimora o cog original de áudi
    - Verifique se as dependências necessárias (como `discord.py`, `lavalink`, etc.) estão instaladas no ambiente onde o Redbot está rodando.
    - Carregue o cog utilizando o comando (geralmente em seu Discord):  
      ```
-     [p]load EnhancedAudio
+     [p]load Enhanced_Audio
      ```
 
 ## Uso
