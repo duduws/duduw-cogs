@@ -1,22 +1,25 @@
 # enhanced_audio
 
-**enhanced_audio** is a cog for Redbot that enhances the original Audio cog. It replaces and improves some of the default Audio commands, providing a better user experience when controlling music playback.
+**enhanced_audio** is a cog for Redbot that enhances the original Audio cog. It replaces and improves the default Audio commands, providing a modern and interactive music experience with beautiful embeds and full slash command support.
 
 ## Features
 
-- **Interactive Interface:** Uses custom buttons (play/pause, stop, skip, repeat, shuffle, etc.) to make music control easier.
-- **Improved Embeds:** Displays the current song, queue, and status with more informative and visually appealing embeds.
-- **Command Overrides:** Replaces default Audio cog commands with enhanced versions:
-  - `play [query]`: Searches and plays music with an improved interactive interface.
-  - `now`: Shows the currently playing song with interactive controls.
-  - `queue`: Displays the music queue in pages.
-  - `skip`: Skips the current track and updates the interactive embed.
+- **Modern Slash Commands:** Use `/play`, `/pause`, `/queue`, `/skip`, `/stop`, `/volume`, `/repeat`, `/shuffle`, `/playlist` and more directly from Discord's UI.
+- **Custom Now Playing Embed:**
+  - Shows the guild name as author (with invite link and icon).
+  - Music name is bold, clickable, and uses the song's image as thumbnail.
+  - Queue shows the number of tracks.
+  - Volume and requester are clearly displayed.
+  - Status fields for repeat, shuffle, and auto-play.
+- **Ephemeral Responses:** All control actions (pause, skip, volume, etc.) reply only to the user who requested, keeping the chat clean.
+- **Command Overrides:** Replaces default Audio cog commands with enhanced versions, including slash commands.
 - **Inactivity Check:** Periodically updates the interactive embed and removes old messages if inactive.
 
 ## Installation
 
 1. **Requirements:**  
    - Make sure the original `Audio` cog for Redbot is installed and properly configured. enhanced_audio depends on it to function correctly.
+   - You need a working Lavalink server. See [Lavalink Setup Guide](https://github.com/freyacodes/Lavalink#server-setup).
 
 2. **Installing enhanced_audio:**  
    - Download or clone this repository into your Redbot cogs folder.
@@ -25,22 +28,20 @@
      ```
      [p]load enhanced_audio
      ```
+   - **Tip:** Use `/play` to start music instantly! All main controls are available as slash commands for a modern Discord experience.
 
 ## Usage
 
-- **`play [query]`**  
-  Searches and plays the specified song, displaying an improved interactive interface with controls.
+- **`/play [query]`**  
+  Searches and plays the specified song, displaying a beautiful interactive embed with controls.
 
-- **`now`**  
-  Shows the currently playing track with buttons for pausing, skipping, repeating, etc.
+- **`/pause`, `/skip`, `/stop`, `/queue`, `/repeat`, `/shuffle`, `/volume`**  
+  All main controls are available as slash commands and respond only to you (ephemeral).
 
-- **`queue`**  
-  Displays the playback queue in a paginated format, allowing navigation through the song list.
+- **Queue and Playlist**  
+  The queue shows the number of tracks and can be managed with buttons or slash commands.
 
-- **`skip`**  
-  Skips the current song and updates the embed with the next track's information.
-
-> ⚠️ These commands override the original ones from the Audio cog. When using commands like `[p]play`, Redbot will use enhanced_audio's version instead of the default.
+> ⚠️ These commands override the original ones from the Audio cog. When using commands like `/play`, Redbot will use enhanced_audio's version instead of the default.
 
 ## Configuration
 

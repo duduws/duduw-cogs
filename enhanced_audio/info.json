@@ -1,11 +1,11 @@
 {
   "name": "enhanced_audio",
   "author": ["duduw"],
-  "description": "An enhanced version of Redbot's Audio cog, featuring interactive embeds and custom commands for a better music playback experience.",
-  "tags": ["audio", "music", "interactive", "redbot"],
+  "description": "An enhanced version of Redbot's Audio cog, featuring interactive embeds, ephemeral responses, and full slash command support for a better music playback experience.",
+  "tags": ["audio", "music", "interactive", "redbot", "slash", "modern"],
   "requirements": [],
   "min_bot_version": "3.5.0",
-  "install_msg": "Thank you for installing enhanced_audio! Make sure the original Audio cog is loaded for proper functionality.",
+  "install_msg": "Thank you for installing enhanced_audio!\n\nTips:\n- Use /play and other slash commands for a modern experience.\n- All controls are available as slash commands (try /queue, /pause, /skip, /stop, /volume, /repeat, /shuffle, /playlist).\n- For best results, make sure the Audio cog is loaded and your Lavalink server is running.\n- Need help? Use /help enhanced_audio or check the README for more info!",
   "permissions": [],
   "type": "COG",
   "cog_version": "1.0.0"

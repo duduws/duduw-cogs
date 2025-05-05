@@ -282,25 +282,29 @@ class EnhancedAudioView(discord.ui.View):
                 or ""
             )
             volume = await self.cog.original_cog.config.guild(self.ctx.guild).volume()
+            guild = self.ctx.guild
+            invite_url = await self.cog.get_guild_invite(guild)
+            author_icon = guild.icon.url if guild.icon else discord.Embed.Empty
+            # Nome da música e link
+            track_title = getattr(player.current, 'title', 'Unknown')
+            track_uri = getattr(player.current, 'uri', None)
+            track_thumbnail = getattr(player.current, 'thumbnail', None)
+            requester = getattr(player.current, 'requester', None)
+            # Embed customizado
             embed = discord.Embed(
                 title="🎵 Now Playing",
-                description=f"**{song}**\n\n{progress_bar}\n`{pos}` / `{dur}`\n\nRequested by: **{player.current.requester}**\nVolume: `{volume}%`",
                 color=0x3498DB,
+                description=f"[**{track_title}**]({track_uri})\n\n{progress_bar}\n`{pos}` / `{dur}`"
             )
-            if guild_data["thumbnail"] and player.current and player.current.thumbnail:
-                embed.set_thumbnail(url=player.current.thumbnail)
-            if player.queue:
-                next_track = (
-                    await self.cog.original_cog.get_track_description(
-                        player.queue[0], self.cog.original_cog.local_folder_current_path
-                    )
-                    or "Unknown"
-                )
-                embed.add_field(
-                    name="📋 Up Next",
-                    value=f"**{next_track}**\n+ {len(player.queue) - 1} more in queue",
-                    inline=False,
-                )
+            embed.set_author(name=guild.name, url=invite_url, icon_url=author_icon)
+            if track_thumbnail:
+                embed.set_thumbnail(url=track_thumbnail)
+            # Número de músicas na fila
+            queue_count = len(player.queue)
+            embed.add_field(name="Queue", value=f"{queue_count} tracks", inline=True)
+            embed.add_field(name="Volume", value=f"{volume}%", inline=True)
+            if requester:
+                embed.add_field(name="Requester", value=f"<@{requester}>", inline=True)
             status = []
             if guild_data["repeat"]:
                 status.append("🔄 Repeat: Enabled")
@@ -309,7 +313,7 @@ class EnhancedAudioView(discord.ui.View):
             if guild_data["auto_play"]:
                 status.append("⏭️ Auto-Play: Enabled")
             if status:
-                embed.add_field(name="⚙️ Status", value="\n".join(status), inline=True)
+                embed.add_field(name="⚙️ Status", value="\n".join(status), inline=False)
             await self.message.edit(embed=embed, view=self)
             self.timeout = 300
         except discord.NotFound:
@@ -322,6 +326,21 @@ class EnhancedAudioView(discord.ui.View):
             except discord.NotFound:
                 if self.update_task:
                     self.update_task.cancel()
+
+    async def get_guild_invite(self, guild):
+        # Tenta pegar um invite existente, senão cria um novo
+        try:
+            invites = await guild.invites()
+            if invites:
+                return invites[0].url
+            else:
+                channel = guild.system_channel or discord.utils.get(guild.text_channels, permissions__create_instant_invite=True)
+                if channel:
+                    invite = await channel.create_invite(max_age=0, max_uses=0, unique=False)
+                    return invite.url
+        except Exception:
+            pass
+        return None
 
 
 class EnhancedQueueView(discord.ui.View):
@@ -457,49 +476,51 @@ class EnhancedAudio(commands.Cog):
             return
         if message.author.id != self.bot.user.id:
             return
-        if not message.embeds:
+        if not message.embeds and not message.content:
             return
         try:
-            embed = message.embeds[0]
-            if embed.title and embed.title.lower() in [
-                "now playing",
-                "tocando agora",
-                "track enqueued",
-                "track added",
-            ]:
-                last_message = self.last_messages.get(message.guild.id)
-                if last_message:
-                    try:
-                        await last_message.channel.fetch_message(last_message.id)
-                        ctx = await self.bot.get_context(message)
-                        view = EnhancedAudioView(self, ctx)
-                        view.message = last_message
-                        await view.start()
-                        await view.update_now_playing()
+            # Deletar mensagens do Audio cog original
+            if message.embeds:
+                embed = message.embeds[0]
+                if embed.title and embed.title.lower() in [
+                    "now playing",
+                    "tocando agora",
+                    "track enqueued",
+                    "track added",
+                ]:
+                    last_message = self.last_messages.get(message.guild.id)
+                    if last_message:
                         try:
-                            await message.delete()
-                        except Exception:
+                            await last_message.channel.fetch_message(last_message.id)
+                            ctx = await self.bot.get_context(message)
+                            view = EnhancedAudioView(self, ctx)
+                            view.message = last_message
+                            await view.start()
+                            await view.update_now_playing()
+                            try:
+                                await message.delete()
+                            except Exception:
+                                pass
+                            return
+                        except discord.NotFound:
                             pass
-                        return
-                    except discord.NotFound:
+                    try:
+                        await message.delete()
+                    except Exception:
                         pass
-                try:
-                    await message.delete()
-                except Exception:
-                    pass
-                ctx = await self.bot.get_context(message)
-                view = EnhancedAudioView(self, ctx)
-                new_embed = discord.Embed(
-                    title="🎵 Now Playing",
-                    description="Loading track information...",
-                    color=0x3498DB,
-                )
-                new_msg = await message.channel.send(embed=new_embed, view=view)
-                view.message = new_msg
-                self.last_messages[ctx.guild.id] = new_msg
-                self.last_activity[ctx.guild.id] = time.time()
-                await view.start()
-                await view.update_now_playing()
+                    ctx = await self.bot.get_context(message)
+                    view = EnhancedAudioView(self, ctx)
+                    new_embed = discord.Embed(
+                        title="🎵 Now Playing",
+                        description="Loading track information...",
+                        color=0x3498DB,
+                    )
+                    new_msg = await message.channel.send(embed=new_embed, view=view)
+                    view.message = new_msg
+                    self.last_messages[ctx.guild.id] = new_msg
+                    self.last_activity[ctx.guild.id] = time.time()
+                    await view.start()
+                    await view.update_now_playing()
             elif message.content and any(
                 status in message.content.lower()
                 for status in [
@@ -512,6 +533,8 @@ class EnhancedAudio(commands.Cog):
                     "música retomada",
                     "música pulada",
                     "música adicionada",
+                    "volume increased",
+                    "volume decreased",
                 ]
             ):
                 try:
@@ -773,6 +796,67 @@ class EnhancedAudio(commands.Cog):
                 pass
 
 
+class AudioSlash(commands.Cog):
+    def __init__(self, bot, enhanced_audio_cog):
+        self.bot = bot
+        self.enhanced_audio_cog = enhanced_audio_cog
+
+    @app_commands.command(name="play", description="Play a song or playlist")
+    async def play(self, interaction: discord.Interaction, query: str):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.command_eplay(ctx, query=query)
+        await interaction.response.send_message("Track added to queue!", ephemeral=True)
+
+    @app_commands.command(name="pause", description="Pause the current track")
+    async def pause(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.original_cog.command_pause(ctx)
+        await interaction.response.send_message("Track paused!", ephemeral=True)
+
+    @app_commands.command(name="playlist", description="Show the playlist queue")
+    async def playlist(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.command_equeue(ctx)
+        await interaction.response.send_message("Playlist shown above!", ephemeral=True)
+
+    @app_commands.command(name="queue", description="Show the queue")
+    async def queue(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.command_equeue(ctx)
+        await interaction.response.send_message("Queue shown above!", ephemeral=True)
+
+    @app_commands.command(name="repeat", description="Toggle repeat mode")
+    async def repeat(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.original_cog.command_repeat(ctx)
+        await interaction.response.send_message("Repeat toggled!", ephemeral=True)
+
+    @app_commands.command(name="shuffle", description="Shuffle the queue")
+    async def shuffle(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.original_cog.command_shuffle(ctx)
+        await interaction.response.send_message("Queue shuffled!", ephemeral=True)
+
+    @app_commands.command(name="skip", description="Skip the current track")
+    async def skip(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.command_eskip(ctx)
+        await interaction.response.send_message("Track skipped!", ephemeral=True)
+
+    @app_commands.command(name="stop", description="Stop playback")
+    async def stop(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.original_cog.command_stop(ctx)
+        await interaction.response.send_message("Playback stopped!", ephemeral=True)
+
+    @app_commands.command(name="volume", description="Set the volume (0-150%)")
+    async def volume(self, interaction: discord.Interaction, volume: int):
+        ctx = await self.bot.get_context(interaction)
+        await self.enhanced_audio_cog.original_cog.command_volume(ctx, vol=volume)
+        await interaction.response.send_message(f"Volume set to {volume}%!", ephemeral=True)
+
+
 async def setup(bot):
     cog = EnhancedAudio(bot)
     await bot.add_cog(cog)
+    await bot.add_cog(AudioSlash(bot, cog))
