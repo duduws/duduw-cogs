@@ -5,7 +5,6 @@
   "tags": ["audio", "music", "interactive", "redbot"],
   "requirements": [],
   "min_bot_version": "3.5.0",
-  "max_bot_version": "",
   "install_msg": "Thank you for installing enhanced_audio! Make sure the original Audio cog is loaded for proper functionality.",
   "permissions": [],
   "type": "COG",
