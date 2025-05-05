@@ -1,4 +1,4 @@
-# EnhancedAudio
+# Enhanced_Audio
 
 O **EnhancedAudio** é um cog para o Redbot que aprimora o cog original de áudio. Ele adiciona embeds mais bonitos e interativos, substitui e melhora alguns comandos do cog padrão, proporcionando uma experiência melhor para os usuários ao controlar a reprodução de músicas.
 
