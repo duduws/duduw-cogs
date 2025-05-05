@@ -1,8 +1,8 @@
 {
     "author": ["duduws"],
-    "install_msg": "Obrigado por instalar meu repositório de cogs! Se precisar de suporte, abra uma issue no GitHub ou entre em contato comigo no Discord.",
+    "install_msg": "Thanks for installing my cog repository! If you need support, open an issue on GitHub or contact me on Discord.",
     "name": "duduw-cogs",
-    "short": "Cogs personalizados para Red-DiscordBot.",
-    "description": "Uma coleção de cogs personalizados desenvolvidos para o Red-DiscordBot, incluindo funcionalidades avançadas de áudio e muito mais.",
+    "short": "Custom cogs for Red-DiscordBot.",
+    "description": "A collection of custom cogs developed for Red-DiscordBot, including advanced audio features and much more.",
     "tags": ["audio", "utility", "discord", "redbot", "custom"]
 }
