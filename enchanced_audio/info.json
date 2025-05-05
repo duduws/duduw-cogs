@@ -1,0 +1,13 @@
+{
+  "name": "EnhancedAudio",
+  "author": "duduw",
+  "description": "Uma versão aprimorada do cog Audio do Redbot, com embeds interativos e comandos customizados para uma melhor experiência de reprodução musical.",
+  "tags": ["audio", "music", "interactive", "redbot"],
+  "requirements": [],
+  "min_bot_version": "3.5.0",
+  "max_bot_version": "",
+  "install_msg": "Obrigado por instalar o EnhancedAudio! Certifique-se de que o cog Audio original esteja carregado para um funcionamento correto.",
+  "permissions": [],
+  "type": "COG",
+  "cog_version": "1.0.0"
+}
