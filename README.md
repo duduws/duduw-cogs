@@ -1,4 +1,3 @@
-```markdown
 # 🌟 My Redbot Cogs
 
 Welcome to my GitHub repository! This project is a collection of custom **[Red-DiscordBot](https://docs.discord.red/en/stable/)** cogs that add new features, enhancements, and fun utilities to your Discord server.
@@ -84,4 +83,3 @@ Thanks to:
 ---
 
 ### ⭐ Don't forget to **Star** this repo if you find it useful!
-```
