@@ -1,6 +1,6 @@
 {
   "name": "EnhancedAudio",
-  "author": "duduw",
+  "author": ["duduw"],
   "description": "An enhanced version of Redbot's Audio cog, featuring interactive embeds and custom commands for a better music playback experience.",
   "tags": ["audio", "music", "interactive", "redbot"],
   "requirements": [],
