@@ -1,6 +1,6 @@
 # Enhanced_Audio
 
-O **EnhancedAudio** é um cog para o Redbot que aprimora o cog original de áudio. Ele adiciona embeds mais bonitos e interativos, substitui e melhora alguns comandos do cog padrão, proporcionando uma experiência melhor para os usuários ao controlar a reprodução de músicas.
+O **Enhanced_Audio** é um cog para o Redbot que aprimora o cog original de áudio. Ele adiciona embeds mais bonitos e interativos, substitui e melhora alguns comandos do cog padrão, proporcionando uma experiência melhor para os usuários ao controlar a reprodução de músicas.
 
 ## Recursos
 
@@ -16,9 +16,9 @@ O **EnhancedAudio** é um cog para o Redbot que aprimora o cog original de áudi
 ## Instalação
 
 1. **Pré-requisitos:**  
-   - Certifique-se de que o cog `Audio` original do Redbot esteja instalado e devidamente configurado. O EnhancedAudio depende dele para funcionar corretamente.
+   - Certifique-se de que o cog `Audio` original do Redbot esteja instalado e devidamente configurado. O Enhanced_Audio depende dele para funcionar corretamente.
 
-2. **Instalação do EnhancedAudio:**  
+2. **Instalação do Enhanced_Audio:**  
    - Faça o download ou clone este repositório para a pasta de cogs do seu Redbot.
    - Verifique se as dependências necessárias (como `discord.py`, `lavalink`, etc.) estão instaladas no ambiente onde o Redbot está rodando.
    - Carregue o cog utilizando o comando (geralmente em seu Discord):  
