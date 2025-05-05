@@ -33,19 +33,13 @@ You can install cogs from this repo by adding it as a third-party repo in Redbot
 
 To get started with my cogs, make sure the `downloader` cog is active on your Red instance.
 
-.. code-block:: ini
-
     [p]load downloader
 
 Now, add my custom cog repository to your bot:
 
-.. code-block:: ini
-
     [p]repo add duduw-cogs https://github.com/duduws/duduw-cogs
 
 To install a specific cog, replace `<cog>` with the name of the one you want to add:
-
-.. code-block:: ini
 
     [p]cog install duduw-cogs <cog>
 
