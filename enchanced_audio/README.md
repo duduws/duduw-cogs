@@ -1,50 +1,53 @@
+```markdown
 # Enhanced_Audio
 
-O **Enhanced_Audio** é um cog para o Redbot que aprimora o cog original de áudio. Ele adiciona embeds mais bonitos e interativos, substitui e melhora alguns comandos do cog padrão, proporcionando uma experiência melhor para os usuários ao controlar a reprodução de músicas.
+**Enhanced_Audio** is a cog for Redbot that enhances the original Audio cog. It replaces and improves some of the default Audio commands, providing a better user experience when controlling music playback.
 
-## Recursos
+## Features
 
-- **Interface Interativa:** Utiliza botões customizados (play/pause, stop, skip, repeat, shuffle, etc.) para facilitar o controle da reprodução.
-- **Melhores Embeds:** Exibe informações da música atual, fila de reprodução e status com embeds mais informativos e visualmente agradáveis.
-- **Comandos Aprimorados:** Novos comandos que substituem os comandos padrão do cog Audio:
-  - `eplay [query]`: Pesquisa e reproduz a música com uma interface aprimorada.
-  - `enow`: Mostra a música atual com controles interativos.
-  - `equeue`: Exibe a fila de reprodução em páginas.
-  - `eskip`: Pula a música atual e atualiza a interface.
-- **Verificação de Inatividade:** Limpa mensagens antigas e atualiza periodicamente o embed interativo.
+- **Interactive Interface:** Uses custom buttons (play/pause, stop, skip, repeat, shuffle, etc.) to make music control easier.
+- **Improved Embeds:** Displays the current song, queue, and status with more informative and visually appealing embeds.
+- **Command Overrides:** Replaces default Audio cog commands with enhanced versions:
+  - `play [query]`: Searches and plays music with an improved interactive interface.
+  - `now`: Shows the currently playing song with interactive controls.
+  - `queue`: Displays the music queue in pages.
+  - `skip`: Skips the current track and updates the interactive embed.
+- **Inactivity Check:** Periodically updates the interactive embed and removes old messages if inactive.
 
-## Instalação
+## Installation
 
-1. **Pré-requisitos:**  
-   - Certifique-se de que o cog `Audio` original do Redbot esteja instalado e devidamente configurado. O Enhanced_Audio depende dele para funcionar corretamente.
+1. **Requirements:**  
+   - Make sure the original `Audio` cog for Redbot is installed and properly configured. Enhanced_Audio depends on it to function correctly.
 
-2. **Instalação do Enhanced_Audio:**  
-   - Faça o download ou clone este repositório para a pasta de cogs do seu Redbot.
-   - Verifique se as dependências necessárias (como `discord.py`, `lavalink`, etc.) estão instaladas no ambiente onde o Redbot está rodando.
-   - Carregue o cog utilizando o comando (geralmente em seu Discord):  
+2. **Installing Enhanced_Audio:**  
+   - Download or clone this repository into your Redbot cogs folder.
+   - Ensure all required dependencies (such as `discord.py`, `lavalink`, etc.) are installed in the environment where Redbot is running.
+   - Load the cog using the following command in your Discord server:  
      ```
      [p]load Enhanced_Audio
      ```
 
-## Uso
+## Usage
 
-- **`eplay [query]`**  
-  Pesquisa e reproduz a música especificada, exibindo uma interface aprimorada com controles interativos.
+- **`play [query]`**  
+  Searches and plays the specified song, displaying an improved interactive interface with controls.
 
-- **`enow`**  
-  Mostra a música atualmente em reprodução, com botões para pausar, pular, repetir, etc.
+- **`now`**  
+  Shows the currently playing track with buttons for pausing, skipping, repeating, etc.
 
-- **`equeue`**  
-  Exibe a fila de reprodução em formato paginado, permitindo a navegação pela lista de músicas.
+- **`queue`**  
+  Displays the playback queue in a paginated format, allowing navigation through the song list.
 
-- **`eskip`**  
-  Pula a música atual e atualiza o embed com informações da nova faixa em reprodução.
+- **`skip`**  
+  Skips the current song and updates the embed with the next track's information.
 
-## Configuração
+> ⚠️ These commands override the original ones from the Audio cog. When using commands like `[p]play`, Redbot will use Enhanced_Audio's version instead of the default.
 
-O cog utiliza a configuração do Redbot para armazenar dados específicos por guilda, como os estados de repetição e modo aleatório. Ele também inicia uma tarefa em background que verifica a inatividade para limpar mensagens antigas.
+## Configuration
 
-## Contribuição
+This cog uses Redbot’s configuration system to store per-guild settings such as repeat state and shuffle mode. It also runs a background task to check for inactivity and clean up old messages.
 
-Contribuições são bem-vindas! Caso queira sugerir melhorias ou reportar problemas, por favor, abra uma _issue_ ou envie um _pull request_ neste repositório.
+## Contributing
 
+Contributions are welcome! If you'd like to suggest improvements or report issues, please open an issue or submit a pull request on this repository.
+```
