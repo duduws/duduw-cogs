@@ -1,3 +1,15 @@
+"""
+EnhancedAudio Cog for Red-DiscordBot
+
+This cog provides a modern, interactive music experience for Discord servers, replacing and enhancing the default Audio cog with slash commands, interactive embeds, ephemeral responses, and automatic cleanup features.
+
+Author: duduws
+"""
+
+__red_end_user_data_statement__ = (
+    "This cog stores per-guild music settings (such as repeat and shuffle state) and last activity timestamps for the purpose of music playback and auto-disconnect. No personal user data is stored except for user IDs as requesters of tracks, which are only used for display in the Now Playing embed."
+)
+
 import asyncio
 import contextlib
 import math
@@ -14,7 +26,7 @@ from redbot.core import commands, Config
 from redbot.core.i18n import Translator, cog_i18n
 from redbot.core.utils.chat_formatting import humanize_number
 
-log = getLogger("red.cogs.EnhancedAudio")
+log = getLogger("red.enhanced_audio.enhanced_audio")
 _ = Translator("EnhancedAudio", Path(__file__))
 
 
@@ -113,7 +125,7 @@ class EnhancedAudioView(discord.ui.View):
         embed = discord.Embed(
             title="⏹️ Playback Stopped",
             description="Music playback has been stopped.",
-            color=0xE74C3C,
+            color=self.ctx.embed_color or 0xE74C3C,
         )
         if not interaction.response.is_done():
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -176,7 +188,7 @@ class EnhancedAudioView(discord.ui.View):
             embed = discord.Embed(
                 title="⏭️ Track Skipped",
                 description=f"**{track_description}**",
-                color=0x3498DB,
+                color=self.ctx.embed_color or 0x3498DB,
             )
             if player.current:
                 next_track = (
@@ -272,7 +284,7 @@ class EnhancedAudioView(discord.ui.View):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 await self.message.edit(embed=embed, view=self)
                 return
@@ -318,7 +330,7 @@ class EnhancedAudioView(discord.ui.View):
                     requester_mention = f"{requester}"
             embed = discord.Embed(
                 title="🎵 Now Playing",
-                color=0x3498DB,
+                color=self.ctx.embed_color or 0x3498DB,
                 description=f"[**{track_title}**]({track_uri})\n\n{progress_bar}\n`{pos}` / `{dur}`"
             )
             embed.set_author(name=guild.name, url="https://www.duduw.com.br", icon_url=author_icon)
@@ -426,6 +438,12 @@ class EnhancedQueueView(discord.ui.View):
 
 
 class EnhancedAudio(commands.Cog):
+    """
+    EnhancedAudio Cog
+
+    Provides modern, interactive music playback with slash commands, interactive embeds, and auto-cleanup for Red-DiscordBot.
+    """
+
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(
@@ -500,6 +518,8 @@ class EnhancedAudio(commands.Cog):
     async def on_message(self, message):
         if not message.guild:
             return
+        if await self.bot.cog_disabled_in_guild(self, message.guild):
+            return
         if message.author.id != self.bot.user.id:
             return
         if not message.embeds and not message.content:
@@ -528,7 +548,7 @@ class EnhancedAudio(commands.Cog):
             embed = discord.Embed(
                 title="📋 Queue",
                 description="The queue is empty. Add songs with the `play` command.",
-                color=0x3498DB,
+                color=self.ctx.embed_color or 0x3498DB,
             )
             if player.current:
                 current = (
@@ -544,7 +564,7 @@ class EnhancedAudio(commands.Cog):
             return pages
         for i in range(0, len(queue_list), items_per_page):
             queue_chunk = queue_list[i : i + items_per_page]
-            embed = discord.Embed(title="📋 Queue", color=0x3498DB)
+            embed = discord.Embed(title="📋 Queue", color=self.ctx.embed_color or 0x3498DB)
             if i == 0 and player.current:
                 current = (
                     await self.original_cog.get_track_description(
@@ -576,6 +596,10 @@ class EnhancedAudio(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def command_eplay(self, ctx: commands.Context, *, query: str):
+        """
+        Play a song or playlist using the enhanced audio system.
+        This command overrides the default Audio cog's play command.
+        """
         if not self.original_cog:
             await ctx.send(
                 "The original Audio cog was not found. This command will not work."
@@ -610,7 +634,7 @@ class EnhancedAudio(commands.Cog):
                 initial_embed = discord.Embed(
                     title="🎵 Now Playing",
                     description="Loading track information...",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 message = await ctx.send(embed=initial_embed, view=view)
                 view.message = message
@@ -622,7 +646,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="❌ Playback Failed",
                     description="Could not play the requested track.",
-                    color=0xE74C3C,
+                    color=self.ctx.embed_color or 0xE74C3C,
                 )
                 await ctx.send(embed=embed)
         except Exception as e:
@@ -638,6 +662,9 @@ class EnhancedAudio(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def command_enow(self, ctx: commands.Context):
+        """
+        Show the currently playing track with enhanced embed and controls.
+        """
         if not self.original_cog:
             await ctx.send(
                 "The original Audio cog was not found. This command will not work."
@@ -648,7 +675,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -677,7 +704,7 @@ class EnhancedAudio(commands.Cog):
             initial_embed = discord.Embed(
                 title="🎵 Now Playing",
                 description="Loading track information...",
-                color=0x3498DB,
+                color=self.ctx.embed_color or 0x3498DB,
             )
             message = await ctx.send(embed=initial_embed, view=view)
             view.message = message
@@ -698,6 +725,9 @@ class EnhancedAudio(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def command_equeue(self, ctx: commands.Context):
+        """
+        Show the current music queue with interactive controls.
+        """
         if not self.original_cog:
             await ctx.send(
                 "The original Audio cog was not found. This command will not work."
@@ -708,7 +738,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="📋 Queue",
                     description="There is no music playing right now.",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -730,6 +760,9 @@ class EnhancedAudio(commands.Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
     async def command_eskip(self, ctx: commands.Context):
+        """
+        Skip the currently playing track using the enhanced audio system.
+        """
         if not self.original_cog:
             await ctx.send(
                 "The original Audio cog was not found. This command will not work."
@@ -740,7 +773,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -758,7 +791,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="⏭️ Track Skipped",
                     description=f"**{track_description}**",
-                    color=0x3498DB,
+                    color=self.ctx.embed_color or 0x3498DB,
                 )
                 if player.current:
                     next_track = (
@@ -784,6 +817,9 @@ class EnhancedAudio(commands.Cog):
     @app_commands.command(name="play", description="Play a song or playlist")
     @app_commands.describe(query="Type a song name or URL")
     async def slash_play(self, interaction: discord.Interaction, query: str):
+        """
+        Slash command: Play a song or playlist.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_eplay(ctx, query=query)
@@ -791,6 +827,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="pause", description="Pause the current track")
     async def slash_pause(self, interaction: discord.Interaction):
+        """
+        Slash command: Pause the current track.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_pause(ctx)
@@ -798,6 +837,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="stop", description="Stop playback")
     async def slash_stop(self, interaction: discord.Interaction):
+        """
+        Slash command: Stop music playback.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_stop(ctx)
@@ -805,6 +847,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="skip", description="Skip the current track")
     async def slash_skip(self, interaction: discord.Interaction):
+        """
+        Slash command: Skip the current track.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_eskip(ctx)
@@ -812,6 +857,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="queue", description="Show the queue")
     async def slash_queue(self, interaction: discord.Interaction):
+        """
+        Slash command: Show the current music queue.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_equeue(ctx)
@@ -819,6 +867,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="repeat", description="Toggle repeat mode")
     async def slash_repeat(self, interaction: discord.Interaction):
+        """
+        Slash command: Toggle repeat mode for playback.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_repeat(ctx)
@@ -826,6 +877,9 @@ class EnhancedAudio(commands.Cog):
 
     @app_commands.command(name="shuffle", description="Shuffle the queue")
     async def slash_shuffle(self, interaction: discord.Interaction):
+        """
+        Slash command: Shuffle the current queue.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_shuffle(ctx)
@@ -834,6 +888,9 @@ class EnhancedAudio(commands.Cog):
     @app_commands.command(name="volume", description="Set the volume (0-150%)")
     @app_commands.describe(volume="New volume value between 1 and 150.")
     async def slash_volume(self, interaction: discord.Interaction, volume: app_commands.Range[int, 1, 150]):
+        """
+        Slash command: Set the playback volume.
+        """
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_volume(ctx, vol=volume)
@@ -845,6 +902,9 @@ class EnhancedAudio(commands.Cog):
     @playlist.command(name="play", description="Play a playlist by name")
     @app_commands.describe(playlist="The name of the playlist.")
     async def playlist_play(self, interaction: discord.Interaction, playlist: str):
+        """
+        Slash command: Play a playlist by name.
+        """
         ctx = await self.bot.get_context(interaction)
         # Aqui você pode chamar a lógica de playlist do seu Audio cog
         await interaction.response.send_message(f"Playlist '{playlist}' played!", ephemeral=True)
@@ -865,6 +925,14 @@ class EnhancedAudio(commands.Cog):
                         await msg.delete()
                     except Exception:
                         pass
+
+    async def red_delete_data_for_user(self, *, requester, user_id: int):
+        """
+        Delete all data associated with a user, as required by Red's data deletion API.
+        This cog only stores user IDs as requesters for tracks in memory, which are not persisted.
+        """
+        # No persistent user data to delete; if you add persistent user data in the future, delete it here.
+        pass
 
     async def setup(bot):
         cog = EnhancedAudio(bot)

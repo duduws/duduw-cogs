@@ -51,3 +51,8 @@ This cog uses Redbot's configuration system to store per-guild settings such as 
 ## Contributing
 
 Contributions are welcome! If you'd like to suggest improvements or report issues, please open an issue or submit a pull request on this repository.
+
+## Credits
+
+- Developed by duduws
+- Built using [discord.py](https://github.com/Rapptz/discord.py), [lavalink](https://github.com/freyacodes/Lavalink), and [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot)

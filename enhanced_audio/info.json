@@ -1,12 +1,13 @@
 {
   "name": "enhanced_audio",
-  "author": ["duduw"],
+  "author": ["duduws"],
   "description": "An enhanced version of Redbot's Audio cog, featuring interactive embeds, ephemeral responses, full slash command support, auto-disconnect from voice channels, and automatic cleanup of old Audio cog messages.",
   "tags": ["audio", "music", "interactive", "redbot", "slash", "modern", "autoclean", "autodisconnect"],
   "requirements": [],
   "min_bot_version": "3.5.0",
-  "install_msg": "Thank you for installing enhanced_audio!\n\nTips:\n- Use /play and other slash commands for a modern experience.\n- All controls are available as slash commands (try /queue, /pause, /skip, /stop, /volume, /repeat, /shuffle, /playlist).\n- The bot will always disconnect from voice channels after inactivity, and will auto-cleanup old Audio cog messages.\n- The requester is always mentioned in the Now Playing embed.\n- For best results, make sure the Audio cog is loaded and your Lavalink server is running.\n- Need help? Use /help enhanced_audio or check the README for more info!",
+  "install_msg": "Thank you for installing enhanced_audio!\n\nTips:\n- Use /play and other slash commands for a modern experience.\n- All controls are available as slash commands (try /queue, /pause, /skip, /stop, /volume, /repeat, /shuffle, /playlist).\n- The bot will always disconnect from voice channels after inactivity, and will auto-cleanup old Audio cog messages.\n- The requester is always mentioned in the Now Playing embed.\n- For best results, make sure the Audio cog is loaded and your Lavalink server is running.\n- This cog interacts with outside services (Lavalink, and optionally Spotify if configured).\n- Need help? Use /help enhanced_audio or check the README for more info!",
   "permissions": [],
   "type": "COG",
-  "cog_version": "1.0.0"
+  "cog_version": "1.0.0",
+  "short": "Modern audio experience for Redbot with slash commands and interactive embeds."
 }
