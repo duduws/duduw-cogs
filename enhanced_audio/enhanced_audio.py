@@ -283,7 +283,6 @@ class EnhancedAudioView(discord.ui.View):
             )
             volume = await self.cog.original_cog.config.guild(self.ctx.guild).volume()
             guild = self.ctx.guild
-            invite_url = await self.cog.get_guild_invite(guild)
             author_icon = guild.icon.url if guild.icon else discord.Embed.Empty
             # Nome da música e link
             track_title = getattr(player.current, 'title', 'Unknown')
@@ -296,7 +295,7 @@ class EnhancedAudioView(discord.ui.View):
                 color=0x3498DB,
                 description=f"[**{track_title}**]({track_uri})\n\n{progress_bar}\n`{pos}` / `{dur}`"
             )
-            embed.set_author(name=guild.name, url=invite_url, icon_url=author_icon)
+            embed.set_author(name=guild.name, url="https://www.duduw.com.br", icon_url=author_icon)
             if track_thumbnail:
                 embed.set_thumbnail(url=track_thumbnail)
             # Número de músicas na fila
@@ -326,21 +325,6 @@ class EnhancedAudioView(discord.ui.View):
             except discord.NotFound:
                 if self.update_task:
                     self.update_task.cancel()
-
-    async def get_guild_invite(self, guild):
-        # Tenta pegar um invite existente, senão cria um novo
-        try:
-            invites = await guild.invites()
-            if invites:
-                return invites[0].url
-            else:
-                channel = guild.system_channel or discord.utils.get(guild.text_channels, permissions__create_instant_invite=True)
-                if channel:
-                    invite = await channel.create_invite(max_age=0, max_uses=0, unique=False)
-                    return invite.url
-        except Exception:
-            pass
-        return None
 
 
 class EnhancedQueueView(discord.ui.View):
@@ -622,6 +606,18 @@ class EnhancedAudio(commands.Cog):
                         return
                     except discord.NotFound:
                         pass
+                # Antes de criar nova mensagem, checar se já existe mensagem igual recente
+                recent_msgs = [m async for m in ctx.channel.history(limit=5) if m.author == ctx.me and m.embeds and m.embeds[0].title == "🎵 Now Playing"]
+                if recent_msgs:
+                    # Se já existe, apenas atualiza a view
+                    msg = recent_msgs[0]
+                    view.message = msg
+                    self.last_activity[ctx.guild.id] = time.time()
+                    self.last_messages[ctx.guild.id] = msg
+                    await view.start()
+                    await view.update_now_playing()
+                    await msg.edit(view=view)
+                    return
                 initial_embed = discord.Embed(
                     title="🎵 Now Playing",
                     description="Loading track information...",
