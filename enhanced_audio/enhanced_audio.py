@@ -447,7 +447,7 @@ class EnhancedAudio(commands.Cog):
                 if guild:
                     player = lavalink.get_player(guild_id)
                     if player and not player.current:
-                        if player.is_connected:
+                        if getattr(player, 'channel_id', None):
                             await player.disconnect()
                         last_message = self.last_messages.get(guild_id)
                         if last_message:
@@ -795,68 +795,79 @@ class EnhancedAudio(commands.Cog):
             except Exception:
                 pass
 
-
-class AudioSlash(commands.Cog):
-    def __init__(self, bot, enhanced_audio_cog):
-        self.bot = bot
-        self.enhanced_audio_cog = enhanced_audio_cog
-
+    # Slash commands
     @app_commands.command(name="play", description="Play a song or playlist")
-    async def play(self, interaction: discord.Interaction, query: str):
+    @app_commands.describe(query="Type a song name or URL")
+    async def slash_play(self, interaction: discord.Interaction, query: str):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.command_eplay(ctx, query=query)
+        await self.command_eplay(ctx, query=query)
         await interaction.response.send_message("Track added to queue!", ephemeral=True)
 
     @app_commands.command(name="pause", description="Pause the current track")
-    async def pause(self, interaction: discord.Interaction):
+    async def slash_pause(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.original_cog.command_pause(ctx)
+        await self.original_cog.command_pause(ctx)
         await interaction.response.send_message("Track paused!", ephemeral=True)
 
-    @app_commands.command(name="playlist", description="Show the playlist queue")
-    async def playlist(self, interaction: discord.Interaction):
+    @app_commands.command(name="stop", description="Stop playback")
+    async def slash_stop(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.command_equeue(ctx)
-        await interaction.response.send_message("Playlist shown above!", ephemeral=True)
+        await self.original_cog.command_stop(ctx)
+        await interaction.response.send_message("Playback stopped!", ephemeral=True)
+
+    @app_commands.command(name="skip", description="Skip the current track")
+    async def slash_skip(self, interaction: discord.Interaction):
+        ctx = await self.bot.get_context(interaction)
+        await self.command_eskip(ctx)
+        await interaction.response.send_message("Track skipped!", ephemeral=True)
 
     @app_commands.command(name="queue", description="Show the queue")
-    async def queue(self, interaction: discord.Interaction):
+    async def slash_queue(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.command_equeue(ctx)
+        await self.command_equeue(ctx)
         await interaction.response.send_message("Queue shown above!", ephemeral=True)
 
     @app_commands.command(name="repeat", description="Toggle repeat mode")
-    async def repeat(self, interaction: discord.Interaction):
+    async def slash_repeat(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.original_cog.command_repeat(ctx)
+        await self.original_cog.command_repeat(ctx)
         await interaction.response.send_message("Repeat toggled!", ephemeral=True)
 
     @app_commands.command(name="shuffle", description="Shuffle the queue")
-    async def shuffle(self, interaction: discord.Interaction):
+    async def slash_shuffle(self, interaction: discord.Interaction):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.original_cog.command_shuffle(ctx)
+        await self.original_cog.command_shuffle(ctx)
         await interaction.response.send_message("Queue shuffled!", ephemeral=True)
 
-    @app_commands.command(name="skip", description="Skip the current track")
-    async def skip(self, interaction: discord.Interaction):
-        ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.command_eskip(ctx)
-        await interaction.response.send_message("Track skipped!", ephemeral=True)
-
-    @app_commands.command(name="stop", description="Stop playback")
-    async def stop(self, interaction: discord.Interaction):
-        ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.original_cog.command_stop(ctx)
-        await interaction.response.send_message("Playback stopped!", ephemeral=True)
-
     @app_commands.command(name="volume", description="Set the volume (0-150%)")
-    async def volume(self, interaction: discord.Interaction, volume: int):
+    @app_commands.describe(volume="New volume value between 1 and 150.")
+    async def slash_volume(self, interaction: discord.Interaction, volume: app_commands.Range[int, 1, 150]):
         ctx = await self.bot.get_context(interaction)
-        await self.enhanced_audio_cog.original_cog.command_volume(ctx, vol=volume)
+        await self.original_cog.command_volume(ctx, vol=volume)
         await interaction.response.send_message(f"Volume set to {volume}%!", ephemeral=True)
 
+    # Playlist group (exemplo simplificado)
+    playlist = app_commands.Group(name="playlist", description="Playlist commands", guild_only=True)
 
-async def setup(bot):
-    cog = EnhancedAudio(bot)
-    await bot.add_cog(cog)
-    await bot.add_cog(AudioSlash(bot, cog))
+    @playlist.command(name="play", description="Play a playlist by name")
+    @app_commands.describe(playlist="The name of the playlist.")
+    async def playlist_play(self, interaction: discord.Interaction, playlist: str):
+        ctx = await self.bot.get_context(interaction)
+        # Aqui você pode chamar a lógica de playlist do seu Audio cog
+        await interaction.response.send_message(f"Playlist '{playlist}' played!", ephemeral=True)
+
+    # Adicione outros comandos de playlist conforme necessário
+
+    async def setup(bot):
+        cog = EnhancedAudio(bot)
+        await bot.add_cog(cog)
+        # Registrar comandos slash
+        bot.tree.add_command(cog.slash_play)
+        bot.tree.add_command(cog.slash_pause)
+        bot.tree.add_command(cog.slash_stop)
+        bot.tree.add_command(cog.slash_skip)
+        bot.tree.add_command(cog.slash_queue)
+        bot.tree.add_command(cog.slash_repeat)
+        bot.tree.add_command(cog.slash_shuffle)
+        bot.tree.add_command(cog.slash_volume)
+        bot.tree.add_command(cog.playlist)
