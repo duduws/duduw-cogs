@@ -11,7 +11,7 @@ from discord import app_commands
 from red_commons.logging import getLogger
 
 from redbot.core import commands, Config
-from redbot.core.i18n import Translator
+from redbot.core.i18n import Translator, cog_i18n
 from redbot.core.utils.chat_formatting import humanize_number
 
 log = getLogger("red.cogs.EnhancedAudio")
@@ -130,7 +130,7 @@ class EnhancedAudioView(discord.ui.View):
         if not player.current:
             if not interaction.response.is_done():
                 await interaction.response.send_message(
-                    "Nothing is currently playing.", ephemeral=True
+                    _("Nothing is currently playing."), ephemeral=True
                 )
             return
         await self.cog.delete_audio_cog_embeds(self.ctx)
@@ -143,12 +143,12 @@ class EnhancedAudioView(discord.ui.View):
             await self.cog.original_cog.command_pause(self.ctx)
             button.emoji = "⏸️"
             if not interaction.response.is_done():
-                await interaction.followup.send("▶️ Playback resumed", ephemeral=True)
+                await interaction.followup.send(_("Playback resumed!"), ephemeral=True)
         else:
             await self.cog.original_cog.command_pause(self.ctx)
             button.emoji = "▶️"
             if not interaction.response.is_done():
-                await interaction.followup.send("⏸️ Playback paused", ephemeral=True)
+                await interaction.followup.send(_("Playback paused!"), ephemeral=True)
         await interaction.followup.edit_message(message_id=self.message.id, view=self)
         self.cog.last_activity[self.ctx.guild.id] = time.time()
 
@@ -455,9 +455,26 @@ class EnhancedAudio(commands.Cog):
                 guild = self.bot.get_guild(guild_id)
                 if guild:
                     player = lavalink.get_player(guild_id)
+                    disconnected = False
                     if player and not player.current:
                         if getattr(player, 'channel_id', None):
-                            await player.disconnect()
+                            try:
+                                await player.disconnect()
+                                disconnected = True
+                                log.info(f"[EnhancedAudio] Disconnected lavalink player for guild {guild_id}")
+                            except Exception as e:
+                                log.error(f"[EnhancedAudio] Error disconnecting lavalink player: {e}")
+                        # Forçar desconexão pelo bot do Discord se ainda estiver conectado
+                        voice = guild.voice_client
+                        if voice:
+                            try:
+                                await voice.disconnect(force=True)
+                                disconnected = True
+                                log.info(f"[EnhancedAudio] Force-disconnected Discord voice client for guild {guild_id}")
+                            except Exception as e:
+                                log.error(f"[EnhancedAudio] Error force-disconnecting Discord voice client: {e}")
+                        if not disconnected:
+                            log.warning(f"[EnhancedAudio] Could not disconnect from voice in guild {guild_id}")
                         last_message = self.last_messages.get(guild_id)
                         if last_message:
                             try:
@@ -490,65 +507,15 @@ class EnhancedAudio(commands.Cog):
         try:
             if message.embeds:
                 embed = message.embeds[0]
-                if embed.title and embed.title.lower() in [
-                    "now playing",
-                    "tocando agora",
-                    "track enqueued",
-                    "track added",
-                ]:
-                    last_message = self.last_messages.get(message.guild.id)
-                    if last_message:
-                        try:
-                            await last_message.channel.fetch_message(last_message.id)
-                            ctx = await self.bot.get_context(message)
-                            view = EnhancedAudioView(self, ctx)
-                            view.message = last_message
-                            await view.start()
-                            await view.update_now_playing()
-                            try:
-                                await message.delete()
-                            except Exception:
-                                pass
-                            return
-                        except discord.NotFound:
-                            pass
+                if embed.title and any(
+                    t in embed.title.lower() for t in [
+                        "track paused", "track resumed", "volume", "track enqueued", "track added"
+                    ]
+                ):
                     try:
                         await message.delete()
                     except Exception:
                         pass
-                    ctx = await self.bot.get_context(message)
-                    view = EnhancedAudioView(self, ctx)
-                    new_embed = discord.Embed(
-                        title="🎵 Now Playing",
-                        description="Loading track information...",
-                        color=0x3498DB,
-                    )
-                    new_msg = await message.channel.send(embed=new_embed, view=view)
-                    view.message = new_msg
-                    self.last_messages[ctx.guild.id] = new_msg
-                    self.last_activity[ctx.guild.id] = time.time()
-                    await view.start()
-                    await view.update_now_playing()
-            elif message.content and any(
-                status in message.content.lower()
-                for status in [
-                    "track paused",
-                    "track resumed",
-                    "track skipped",
-                    "track enqueued",
-                    "track added",
-                    "música pausada",
-                    "música retomada",
-                    "música pulada",
-                    "música adicionada",
-                    "volume increased",
-                    "volume decreased",
-                ]
-            ):
-                try:
-                    await message.delete()
-                except Exception:
-                    pass
         except Exception as e:
             log.error(f"Error processing message: {e}")
 
@@ -827,7 +794,7 @@ class EnhancedAudio(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_pause(ctx)
-        await interaction.followup.send("Track paused!", ephemeral=True)
+        await interaction.followup.send(_("Track paused!"), ephemeral=True)
 
     @app_commands.command(name="stop", description="Stop playback")
     async def slash_stop(self, interaction: discord.Interaction):

@@ -6,14 +6,15 @@
 
 - **Modern Slash Commands:** Use `/play`, `/pause`, `/queue`, `/skip`, `/stop`, `/volume`, `/repeat`, `/shuffle`, `/playlist` and more directly from Discord's UI.
 - **Custom Now Playing Embed:**
-  - Shows the guild name as author (with invite link and icon).
+  - Shows the guild name as author (with a custom link and icon).
   - Music name is bold, clickable, and uses the song's image as thumbnail.
   - Queue shows the number of tracks.
-  - Volume and requester are clearly displayed.
+  - Volume and requester are clearly displayed, with the requester always mentioned.
   - Status fields for repeat, shuffle, and auto-play.
 - **Ephemeral Responses:** All control actions (pause, skip, volume, etc.) reply only to the user who requested, keeping the chat clean.
 - **Command Overrides:** Replaces default Audio cog commands with enhanced versions, including slash commands.
-- **Inactivity Check:** Periodically updates the interactive embed and removes old messages if inactive.
+- **Inactivity Check:** Periodically updates the interactive embed and removes old messages if inactive. The bot will always disconnect from the voice channel after inactivity.
+- **Auto-cleanup:** Any embed messages from the original Audio cog (like "Track Paused", "Track Resumed", "Volume") are automatically deleted for a clean experience.
 
 ## Installation
 
@@ -45,7 +46,7 @@
 
 ## Configuration
 
-This cog uses Redbot's configuration system to store per-guild settings such as repeat state and shuffle mode. It also runs a background task to check for inactivity and clean up old messages.
+This cog uses Redbot's configuration system to store per-guild settings such as repeat state and shuffle mode. It also runs a background task to check for inactivity and clean up old messages and disconnect from voice channels.
 
 ## Contributing
 
