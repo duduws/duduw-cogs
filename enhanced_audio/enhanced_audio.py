@@ -289,6 +289,19 @@ class EnhancedAudioView(discord.ui.View):
             track_uri = getattr(player.current, 'uri', None)
             track_thumbnail = getattr(player.current, 'thumbnail', None)
             requester = getattr(player.current, 'requester', None)
+            # Corrigir menção do requester
+            requester_mention = None
+            if requester:
+                # Se for int, é ID; se for str, tentar converter
+                try:
+                    user_id = int(requester)
+                    member = self.ctx.guild.get_member(user_id)
+                    if member:
+                        requester_mention = member.mention
+                    else:
+                        requester_mention = f"<@{user_id}>"
+                except Exception:
+                    requester_mention = str(requester)
             # Embed customizado
             embed = discord.Embed(
                 title="🎵 Now Playing",
@@ -302,8 +315,8 @@ class EnhancedAudioView(discord.ui.View):
             queue_count = len(player.queue)
             embed.add_field(name="Queue", value=f"{queue_count} tracks", inline=True)
             embed.add_field(name="Volume", value=f"{volume}%", inline=True)
-            if requester:
-                embed.add_field(name="Requester", value=f"<@{requester}>", inline=True)
+            if requester_mention:
+                embed.add_field(name="Requester", value=requester_mention, inline=True)
             status = []
             if guild_data["repeat"]:
                 status.append("🔄 Repeat: Enabled")
@@ -795,52 +808,60 @@ class EnhancedAudio(commands.Cog):
     @app_commands.command(name="play", description="Play a song or playlist")
     @app_commands.describe(query="Type a song name or URL")
     async def slash_play(self, interaction: discord.Interaction, query: str):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_eplay(ctx, query=query)
-        await interaction.response.send_message("Track added to queue!", ephemeral=True)
+        await interaction.followup.send("Track added to queue!", ephemeral=True)
 
     @app_commands.command(name="pause", description="Pause the current track")
     async def slash_pause(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_pause(ctx)
-        await interaction.response.send_message("Track paused!", ephemeral=True)
+        await interaction.followup.send("Track paused!", ephemeral=True)
 
     @app_commands.command(name="stop", description="Stop playback")
     async def slash_stop(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_stop(ctx)
-        await interaction.response.send_message("Playback stopped!", ephemeral=True)
+        await interaction.followup.send("Playback stopped!", ephemeral=True)
 
     @app_commands.command(name="skip", description="Skip the current track")
     async def slash_skip(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_eskip(ctx)
-        await interaction.response.send_message("Track skipped!", ephemeral=True)
+        await interaction.followup.send("Track skipped!", ephemeral=True)
 
     @app_commands.command(name="queue", description="Show the queue")
     async def slash_queue(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.command_equeue(ctx)
-        await interaction.response.send_message("Queue shown above!", ephemeral=True)
+        await interaction.followup.send("Queue shown above!", ephemeral=True)
 
     @app_commands.command(name="repeat", description="Toggle repeat mode")
     async def slash_repeat(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_repeat(ctx)
-        await interaction.response.send_message("Repeat toggled!", ephemeral=True)
+        await interaction.followup.send("Repeat toggled!", ephemeral=True)
 
     @app_commands.command(name="shuffle", description="Shuffle the queue")
     async def slash_shuffle(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_shuffle(ctx)
-        await interaction.response.send_message("Queue shuffled!", ephemeral=True)
+        await interaction.followup.send("Queue shuffled!", ephemeral=True)
 
     @app_commands.command(name="volume", description="Set the volume (0-150%)")
     @app_commands.describe(volume="New volume value between 1 and 150.")
     async def slash_volume(self, interaction: discord.Interaction, volume: app_commands.Range[int, 1, 150]):
+        await interaction.response.defer(ephemeral=True)
         ctx = await self.bot.get_context(interaction)
         await self.original_cog.command_volume(ctx, vol=volume)
-        await interaction.response.send_message(f"Volume set to {volume}%!", ephemeral=True)
+        await interaction.followup.send(f"Volume set to {volume}%!", ephemeral=True)
 
     # Playlist group (exemplo simplificado)
     playlist = app_commands.Group(name="playlist", description="Playlist commands", guild_only=True)
