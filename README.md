@@ -49,7 +49,7 @@ To install a specific cog, replace `<cog>` with the name of the one you want to 
 
 | Cog Name        | Description                                | Status   |
 |-----------------|--------------------------------------------|----------|
-| [enchaced_audio](https://github.com/duduws/duduw-cogs/tree/main/enchanced_audio) | Enhance original audio cog experience in voice channels | 🛠️ WIP   |
+| [enhaced_audio](https://github.com/duduws/duduw-cogs/tree/main/enhanced_audio) | Enhance original audio cog experience in voice channels | 🛠️ WIP   |
 | More coming!    | Stay tuned for more awesome cogs soon.     | 🛠️ WIP   |
 
 Each cog will have its own folder and README explaining usage and configuration.
