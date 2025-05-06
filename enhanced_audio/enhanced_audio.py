@@ -98,22 +98,29 @@ class EnhancedAudioView(discord.ui.View):
     ):
         player = lavalink.get_player(self.ctx.guild.id)
         if not player.current:
-            await interaction.response.send_message(
-                "Nothing is currently playing.", ephemeral=True
-            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    "Nothing is currently playing.", ephemeral=True
+                )
             return
-        await interaction.response.defer(ephemeral=True)
+        await self.cog.delete_audio_cog_embeds(self.ctx)
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.defer(ephemeral=True)
+        except Exception:
+            pass
         await self.cog.original_cog.command_stop(self.ctx)
         embed = discord.Embed(
             title="⏹️ Playback Stopped",
             description="Music playback has been stopped.",
             color=0xE74C3C,
         )
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        if not interaction.response.is_done():
+            await interaction.followup.send(embed=embed, ephemeral=True)
         await interaction.followup.edit_message(
             message_id=self.message.id, embed=embed, view=None
         )
-        self.stop()
+        await self.stop()
 
     @discord.ui.button(emoji="⏯️", style=discord.ButtonStyle.primary, row=0)
     async def play_pause_button(
@@ -121,21 +128,27 @@ class EnhancedAudioView(discord.ui.View):
     ):
         player = lavalink.get_player(self.ctx.guild.id)
         if not player.current:
-            await interaction.response.send_message(
-                "Nothing is currently playing.", ephemeral=True
-            )
+            if not interaction.response.is_done():
+                await interaction.response.send_message(
+                    "Nothing is currently playing.", ephemeral=True
+                )
             return
         await self.cog.delete_audio_cog_embeds(self.ctx)
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.defer(ephemeral=True)
+        except Exception:
+            pass
         if player.paused:
-            await interaction.response.defer(ephemeral=True)
             await self.cog.original_cog.command_pause(self.ctx)
             button.emoji = "⏸️"
-            await interaction.followup.send("▶️ Playback resumed", ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.followup.send("▶️ Playback resumed", ephemeral=True)
         else:
-            await interaction.response.defer(ephemeral=True)
             await self.cog.original_cog.command_pause(self.ctx)
             button.emoji = "▶️"
-            await interaction.followup.send("⏸️ Playback paused", ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.followup.send("⏸️ Playback paused", ephemeral=True)
         await interaction.followup.edit_message(message_id=self.message.id, view=self)
         self.cog.last_activity[self.ctx.guild.id] = time.time()
 
