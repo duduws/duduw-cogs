@@ -125,6 +125,7 @@ class EnhancedAudioView(discord.ui.View):
                 "Nothing is currently playing.", ephemeral=True
             )
             return
+        await self.cog.delete_audio_cog_embeds(self.ctx)
         if player.paused:
             await interaction.response.defer(ephemeral=True)
             await self.cog.original_cog.command_pause(self.ctx)
@@ -208,6 +209,7 @@ class EnhancedAudioView(discord.ui.View):
                 "Nothing is currently playing.", ephemeral=True
             )
             return
+        await self.cog.delete_audio_cog_embeds(self.ctx)
         await interaction.response.defer(ephemeral=True)
         current_volume = await self.cog.original_cog.config.guild(
             self.ctx.guild
@@ -229,6 +231,7 @@ class EnhancedAudioView(discord.ui.View):
                 "Nothing is currently playing.", ephemeral=True
             )
             return
+        await self.cog.delete_audio_cog_embeds(self.ctx)
         await interaction.response.defer(ephemeral=True)
         current_volume = await self.cog.original_cog.config.guild(
             self.ctx.guild
@@ -284,25 +287,22 @@ class EnhancedAudioView(discord.ui.View):
             volume = await self.cog.original_cog.config.guild(self.ctx.guild).volume()
             guild = self.ctx.guild
             author_icon = guild.icon.url if guild.icon else discord.Embed.Empty
-            # Nome da música e link
             track_title = getattr(player.current, 'title', 'Unknown')
             track_uri = getattr(player.current, 'uri', None)
             track_thumbnail = getattr(player.current, 'thumbnail', None)
             requester = getattr(player.current, 'requester', None)
-            # Corrigir menção do requester
             requester_mention = None
             if requester:
-                # Se for int, é ID; se for str, tentar converter
+                member = None
                 try:
                     user_id = int(requester)
                     member = self.ctx.guild.get_member(user_id)
-                    if member:
-                        requester_mention = member.mention
-                    else:
-                        requester_mention = f"<@{user_id}>"
                 except Exception:
-                    requester_mention = str(requester)
-            # Embed customizado
+                    member = discord.utils.find(lambda m: m.name == str(requester) or m.display_name == str(requester), self.ctx.guild.members)
+                if member:
+                    requester_mention = member.mention
+                else:
+                    requester_mention = f"{requester}"
             embed = discord.Embed(
                 title="🎵 Now Playing",
                 color=0x3498DB,
@@ -311,7 +311,6 @@ class EnhancedAudioView(discord.ui.View):
             embed.set_author(name=guild.name, url="https://www.duduw.com.br", icon_url=author_icon)
             if track_thumbnail:
                 embed.set_thumbnail(url=track_thumbnail)
-            # Número de músicas na fila
             queue_count = len(player.queue)
             embed.add_field(name="Queue", value=f"{queue_count} tracks", inline=True)
             embed.add_field(name="Volume", value=f"{volume}%", inline=True)
@@ -476,7 +475,6 @@ class EnhancedAudio(commands.Cog):
         if not message.embeds and not message.content:
             return
         try:
-            # Deletar mensagens do Audio cog original
             if message.embeds:
                 embed = message.embeds[0]
                 if embed.title and embed.title.lower() in [
@@ -619,10 +617,8 @@ class EnhancedAudio(commands.Cog):
                         return
                     except discord.NotFound:
                         pass
-                # Antes de criar nova mensagem, checar se já existe mensagem igual recente
                 recent_msgs = [m async for m in ctx.channel.history(limit=5) if m.author == ctx.me and m.embeds and m.embeds[0].title == "🎵 Now Playing"]
                 if recent_msgs:
-                    # Se já existe, apenas atualiza a view
                     msg = recent_msgs[0]
                     view.message = msg
                     self.last_activity[ctx.guild.id] = time.time()
@@ -874,6 +870,21 @@ class EnhancedAudio(commands.Cog):
         await interaction.response.send_message(f"Playlist '{playlist}' played!", ephemeral=True)
 
     # Adicione outros comandos de playlist conforme necessário
+
+    # Utility para deletar mensagens embed do Audio cog original
+    async def delete_audio_cog_embeds(self, ctx):
+        async for msg in ctx.channel.history(limit=10):
+            if msg.author == ctx.me and msg.embeds:
+                embed = msg.embeds[0]
+                if embed.title and any(
+                    t in embed.title.lower() for t in [
+                        "track paused", "track resumed", "volume", "track enqueued", "track added"
+                    ]
+                ):
+                    try:
+                        await msg.delete()
+                    except Exception:
+                        pass
 
     async def setup(bot):
         cog = EnhancedAudio(bot)
