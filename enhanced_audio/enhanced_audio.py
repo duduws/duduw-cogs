@@ -125,7 +125,7 @@ class EnhancedAudioView(discord.ui.View):
         embed = discord.Embed(
             title="⏹️ Playback Stopped",
             description="Music playback has been stopped.",
-            color=self.ctx.embed_color or 0xE74C3C,
+            color=0xE74C3C,
         )
         if not interaction.response.is_done():
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -188,7 +188,7 @@ class EnhancedAudioView(discord.ui.View):
             embed = discord.Embed(
                 title="⏭️ Track Skipped",
                 description=f"**{track_description}**",
-                color=self.ctx.embed_color or 0x3498DB,
+                color=0x3498DB,
             )
             if player.current:
                 next_track = (
@@ -284,7 +284,7 @@ class EnhancedAudioView(discord.ui.View):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 await self.message.edit(embed=embed, view=self)
                 return
@@ -330,7 +330,7 @@ class EnhancedAudioView(discord.ui.View):
                     requester_mention = f"{requester}"
             embed = discord.Embed(
                 title="🎵 Now Playing",
-                color=self.ctx.embed_color or 0x3498DB,
+                color=0x3498DB,
                 description=f"[**{track_title}**]({track_uri})\n\n{progress_bar}\n`{pos}` / `{dur}`"
             )
             embed.set_author(name=guild.name, url="https://www.duduw.com.br", icon_url=author_icon)
@@ -548,7 +548,7 @@ class EnhancedAudio(commands.Cog):
             embed = discord.Embed(
                 title="📋 Queue",
                 description="The queue is empty. Add songs with the `play` command.",
-                color=self.ctx.embed_color or 0x3498DB,
+                color=0x3498DB,
             )
             if player.current:
                 current = (
@@ -564,7 +564,7 @@ class EnhancedAudio(commands.Cog):
             return pages
         for i in range(0, len(queue_list), items_per_page):
             queue_chunk = queue_list[i : i + items_per_page]
-            embed = discord.Embed(title="📋 Queue", color=self.ctx.embed_color or 0x3498DB)
+            embed = discord.Embed(title="📋 Queue", color=0x3498DB)
             if i == 0 and player.current:
                 current = (
                     await self.original_cog.get_track_description(
@@ -634,7 +634,7 @@ class EnhancedAudio(commands.Cog):
                 initial_embed = discord.Embed(
                     title="🎵 Now Playing",
                     description="Loading track information...",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 message = await ctx.send(embed=initial_embed, view=view)
                 view.message = message
@@ -646,7 +646,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="❌ Playback Failed",
                     description="Could not play the requested track.",
-                    color=self.ctx.embed_color or 0xE74C3C,
+                    color=0xE74C3C,
                 )
                 await ctx.send(embed=embed)
         except Exception as e:
@@ -675,7 +675,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -704,7 +704,7 @@ class EnhancedAudio(commands.Cog):
             initial_embed = discord.Embed(
                 title="🎵 Now Playing",
                 description="Loading track information...",
-                color=self.ctx.embed_color or 0x3498DB,
+                color=0x3498DB,
             )
             message = await ctx.send(embed=initial_embed, view=view)
             view.message = message
@@ -738,7 +738,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="📋 Queue",
                     description="There is no music playing right now.",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -773,7 +773,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
                     description="There is no music playing right now.",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 await ctx.send(embed=embed)
                 return
@@ -791,7 +791,7 @@ class EnhancedAudio(commands.Cog):
                 embed = discord.Embed(
                     title="⏭️ Track Skipped",
                     description=f"**{track_description}**",
-                    color=self.ctx.embed_color or 0x3498DB,
+                    color=0x3498DB,
                 )
                 if player.current:
                     next_track = (
