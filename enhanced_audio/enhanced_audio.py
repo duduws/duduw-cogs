@@ -50,7 +50,7 @@ class EnhancedAudioView(discord.ui.View):
         try:
             while not self.ctx.bot.is_closed():
                 await self.update_now_playing()
-                await asyncio.sleep(10)
+                await asyncio.sleep(60)
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -272,12 +272,6 @@ class EnhancedAudioView(discord.ui.View):
         if not self.message:
             return
         try:
-            try:
-                await self.message.channel.fetch_message(self.message.id)
-            except discord.NotFound:
-                if self.update_task:
-                    self.update_task.cancel()
-                return
             player = lavalink.get_player(self.ctx.guild.id)
             guild_data = await self.cog.original_cog.config.guild(self.ctx.guild).all()
             if not player.current:
@@ -286,7 +280,11 @@ class EnhancedAudioView(discord.ui.View):
                     description="There is no music playing right now.",
                     color=0x3498DB,
                 )
-                await self.message.edit(embed=embed, view=self)
+                try:
+                    await self.message.edit(embed=embed, view=self)
+                except discord.NotFound:
+                    if self.update_task:
+                        self.update_task.cancel()
                 return
             arrow = await self.cog.original_cog.draw_time(self.ctx)
             pos = self.cog.original_cog.format_time(player.position)
@@ -350,18 +348,14 @@ class EnhancedAudioView(discord.ui.View):
                 status.append("⏭️ Auto-Play: Enabled")
             if status:
                 embed.add_field(name="⚙️ Status", value="\n".join(status), inline=False)
-            await self.message.edit(embed=embed, view=self)
-            self.timeout = 300
-        except discord.NotFound:
-            if self.update_task:
-                self.update_task.cancel()
-        except Exception as e:
-            log.error(f"Error updating embed: {e}")
             try:
-                await self.message.channel.fetch_message(self.message.id)
+                await self.message.edit(embed=embed, view=self)
             except discord.NotFound:
                 if self.update_task:
                     self.update_task.cancel()
+            self.timeout = 300
+        except Exception as e:
+            log.error(f"Error updating embed: {e}")
 
 
 class EnhancedQueueView(discord.ui.View):
