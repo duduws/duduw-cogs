@@ -51,7 +51,7 @@ class EnhancedAudioView(discord.ui.View):
         try:
             while not self.ctx.bot.is_closed():
                 await self.update_now_playing()
-                await asyncio.sleep(60)
+                await asyncio.sleep(120)  # Increased to 2 minutes (120 seconds)
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -278,7 +278,6 @@ class EnhancedAudioView(discord.ui.View):
             # Gather current state for comparison
             state = {
                 'track_id': getattr(player.current, 'identifier', None) if player.current else None,
-                'position': player.position if player.current else None,
                 'paused': player.paused if player.current else None,
                 'volume': await self.cog.original_cog.config.guild(self.ctx.guild).volume() if player.current else None,
                 'queue_len': len(player.queue) if player else 0,
@@ -286,7 +285,7 @@ class EnhancedAudioView(discord.ui.View):
                 'shuffle': guild_data.get('shuffle'),
                 'auto_play': guild_data.get('auto_play'),
             }
-            # Only update if state has changed
+            # Only update if state has changed (removed position checking)
             if state == self._last_state:
                 return
             self._last_state = state
@@ -302,27 +301,15 @@ class EnhancedAudioView(discord.ui.View):
                     if self.update_task:
                         self.update_task.cancel()
                 return
-            arrow = await self.cog.original_cog.draw_time(self.ctx)
-            pos = self.cog.original_cog.format_time(player.position)
+            
+            # No progress tracking - just show duration
             if player.current.is_stream:
                 dur = "LIVE"
-                progress_bar = "🔴 LIVE STREAM"
+                status_indicator = "🔴 LIVE STREAM"
             else:
                 dur = self.cog.original_cog.format_time(player.current.length)
-                progress = (
-                    min(1.0, player.position / player.current.length)
-                    if player.current.length > 0
-                    else 0
-                )
-                bar_length = 20
-                position = round(progress * bar_length)
-                progress_bar = "▬" * position + "🔘" + "▬" * (bar_length - position - 1)
-            song = (
-                await self.cog.original_cog.get_track_description(
-                    player.current, self.cog.original_cog.local_folder_current_path
-                )
-                or ""
-            )
+                status_indicator = "▶️" if not player.paused else "⏸️"
+            
             volume = state['volume']
             guild = self.ctx.guild
             author_icon = guild.icon.url if guild.icon else discord.Embed.Empty
@@ -342,28 +329,46 @@ class EnhancedAudioView(discord.ui.View):
                     requester_mention = member.mention
                 else:
                     requester_mention = f"{requester}"
+            
+            # Build a static embed with no progress tracking
             embed = discord.Embed(
-                title="🎵 Now Playing",
+                title=f"{status_indicator} Now Playing",
                 color=0x3498DB,
-                description=f"[**{track_title}**]({track_uri})\n\n{progress_bar}\n`{pos}` / `{dur}`"
+                description=f"[**{track_title}**]({track_uri})\n\n**Duration:** `{dur}`"
             )
             embed.set_author(name=guild.name, url="https://www.duduw.com.br", icon_url=author_icon)
             if track_thumbnail:
                 embed.set_thumbnail(url=track_thumbnail)
+            
+            # Show queue information
             queue_count = len(player.queue)
-            embed.add_field(name="Queue", value=f"{queue_count} tracks", inline=True)
+            if queue_count > 0:
+                next_track_title = "Unknown"
+                if player.queue:
+                    next_track = player.queue[0]
+                    next_track_title = getattr(next_track, 'title', 'Unknown')
+                embed.add_field(
+                    name="Queue", 
+                    value=f"**{queue_count}** tracks in queue\n**Next:** {next_track_title[:30]}...", 
+                    inline=False
+                )
+            
             embed.add_field(name="Volume", value=f"{volume}%", inline=True)
             if requester_mention:
-                embed.add_field(name="Requester", value=requester_mention, inline=True)
+                embed.add_field(name="Requested by", value=requester_mention, inline=True)
+            
+            # Add status flags as emoji at the bottom
             status = []
             if guild_data["repeat"]:
-                status.append("🔄 Repeat: Enabled")
+                status.append("🔄 Repeat")
             if guild_data["shuffle"]:
-                status.append("🔀 Shuffle: Enabled")
+                status.append("🔀 Shuffle")
             if guild_data["auto_play"]:
-                status.append("⏭️ Auto-Play: Enabled")
+                status.append("⏭️ Auto-Play")
+            
             if status:
-                embed.add_field(name="⚙️ Status", value="\n".join(status), inline=False)
+                embed.add_field(name="Mode", value=" | ".join(status), inline=True)
+            
             try:
                 await self.message.edit(embed=embed, view=self)
             except discord.NotFound:
