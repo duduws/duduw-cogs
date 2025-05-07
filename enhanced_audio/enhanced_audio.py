@@ -37,6 +37,7 @@ class EnhancedAudioView(discord.ui.View):
         self.ctx = ctx
         self.message = None
         self.update_task = None
+        self._last_state = None  # Cache for last player state
 
     async def start(self):
         self.update_task = self.ctx.bot.loop.create_task(self.periodic_update())
@@ -274,6 +275,21 @@ class EnhancedAudioView(discord.ui.View):
         try:
             player = lavalink.get_player(self.ctx.guild.id)
             guild_data = await self.cog.original_cog.config.guild(self.ctx.guild).all()
+            # Gather current state for comparison
+            state = {
+                'track_id': getattr(player.current, 'identifier', None) if player.current else None,
+                'position': player.position if player.current else None,
+                'paused': player.paused if player.current else None,
+                'volume': await self.cog.original_cog.config.guild(self.ctx.guild).volume() if player.current else None,
+                'queue_len': len(player.queue) if player else 0,
+                'repeat': guild_data.get('repeat'),
+                'shuffle': guild_data.get('shuffle'),
+                'auto_play': guild_data.get('auto_play'),
+            }
+            # Only update if state has changed
+            if state == self._last_state:
+                return
+            self._last_state = state
             if not player.current:
                 embed = discord.Embed(
                     title="🎵 Nothing Playing",
@@ -307,7 +323,7 @@ class EnhancedAudioView(discord.ui.View):
                 )
                 or ""
             )
-            volume = await self.cog.original_cog.config.guild(self.ctx.guild).volume()
+            volume = state['volume']
             guild = self.ctx.guild
             author_icon = guild.icon.url if guild.icon else discord.Embed.Empty
             track_title = getattr(player.current, 'title', 'Unknown')
