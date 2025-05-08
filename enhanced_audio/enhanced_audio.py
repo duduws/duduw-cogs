@@ -300,6 +300,11 @@ class EnhancedAudioView(discord.ui.View):
                 except discord.NotFound:
                     if self.update_task:
                         self.update_task.cancel()
+                except discord.HTTPException as e:
+                    if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                        log.debug("Invalid webhook token, stopping updates")
+                        if self.update_task:
+                            self.update_task.cancel()
                 return
             
             # No progress tracking - just show duration
@@ -374,9 +379,18 @@ class EnhancedAudioView(discord.ui.View):
             except discord.NotFound:
                 if self.update_task:
                     self.update_task.cancel()
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token, stopping updates")
+                    if self.update_task:
+                        self.update_task.cancel()
+                else:
+                    # Reraise for other HTTP exceptions
+                    raise
             self.timeout = 300
         except Exception as e:
             log.error(f"Error updating embed: {e}")
+            # Don't try to fetch the message again if there's an error
 
 
 class EnhancedQueueView(discord.ui.View):
@@ -628,42 +642,55 @@ class EnhancedAudio(commands.Cog):
                 view = EnhancedAudioView(self, ctx)
                 if last_message:
                     try:
-                        await last_message.channel.fetch_message(last_message.id)
-                        view.message = last_message
-                        await view.start()
-                        await view.update_now_playing()
-                        await last_message.edit(view=view)
-                        return
-                    except discord.NotFound:
-                        pass
-                recent_msgs = [m async for m in ctx.channel.history(limit=5) if m.author == ctx.me and m.embeds and m.embeds[0].title == "🎵 Now Playing"]
-                if recent_msgs:
-                    msg = recent_msgs[0]
-                    view.message = msg
-                    self.last_activity[ctx.guild.id] = time.time()
-                    self.last_messages[ctx.guild.id] = msg
+                        try:
+                            await last_message.channel.fetch_message(last_message.id)
+                            view.message = last_message
+                            await view.start()
+                            await view.update_now_playing()
+                            await last_message.edit(view=view)
+                            return
+                        except discord.NotFound:
+                            pass
+                        except discord.HTTPException as e:
+                            if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                                log.debug("Invalid webhook token in last message")
+                                pass
+                            else:
+                                raise
+                    except Exception as e:
+                        log.debug(f"Error updating last message: {e}")
+            
+            # Try to find a recent message
+            recent_msgs = [m async for m in ctx.channel.history(limit=5) if m.author == ctx.me and m.embeds and m.embeds[0].title == "🎵 Now Playing"]
+            if recent_msgs:
+                msg = recent_msgs[0]
+                view.message = msg
+                self.last_activity[ctx.guild.id] = time.time()
+                self.last_messages[ctx.guild.id] = msg
+                try:
                     await view.start()
                     await view.update_now_playing()
                     await msg.edit(view=view)
                     return
-                initial_embed = discord.Embed(
-                    title="🎵 Now Playing",
-                    description="Loading track information...",
-                    color=0x3498DB,
-                )
-                message = await ctx.send(embed=initial_embed, view=view)
-                view.message = message
-                self.last_activity[ctx.guild.id] = time.time()
-                self.last_messages[ctx.guild.id] = message
-                await view.start()
-                await view.update_now_playing()
-            else:
-                embed = discord.Embed(
-                    title="❌ Playback Failed",
-                    description="Could not play the requested track.",
-                    color=0xE74C3C,
-                )
-                await ctx.send(embed=embed)
+                except discord.HTTPException as e:
+                    if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                        log.debug("Invalid webhook token in recent message")
+                        pass
+                    else:
+                        raise
+            
+            # Create a new message if needed
+            initial_embed = discord.Embed(
+                title="🎵 Now Playing",
+                description="Loading track information...",
+                color=0x3498DB,
+            )
+            message = await ctx.send(embed=initial_embed, view=view)
+            view.message = message
+            self.last_activity[ctx.guild.id] = time.time()
+            self.last_messages[ctx.guild.id] = message
+            await view.start()
+            await view.update_now_playing()
         except Exception as e:
             log.error(f"Error in eplay command: {e}")
             try:
@@ -835,70 +862,149 @@ class EnhancedAudio(commands.Cog):
         """
         Slash command: Play a song or playlist.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.command_eplay(ctx, query=query)
-        await interaction.followup.send("Track added to queue!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.command_eplay(ctx, query=query)
+            
+            # Only attempt to send followup if interaction hasn't expired
+            try:
+                await interaction.followup.send("Track added to queue!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash play command")
+                    # Interaction expired, no need to handle further
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash play command: {e}")
 
     @app_commands.command(name="pause", description="Pause the current track")
     async def slash_pause(self, interaction: discord.Interaction):
         """
         Slash command: Pause the current track.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.original_cog.command_pause(ctx)
-        await interaction.followup.send(_("Track paused!"), ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.original_cog.command_pause(ctx)
+            
+            try:
+                await interaction.followup.send(_("Track paused!"), ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash pause command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash pause command: {e}")
 
     @app_commands.command(name="stop", description="Stop playback")
     async def slash_stop(self, interaction: discord.Interaction):
         """
         Slash command: Stop music playback.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.original_cog.command_stop(ctx)
-        await interaction.followup.send("Playback stopped!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.original_cog.command_stop(ctx)
+            
+            try:
+                await interaction.followup.send("Playback stopped!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash stop command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash stop command: {e}")
 
     @app_commands.command(name="skip", description="Skip the current track")
     async def slash_skip(self, interaction: discord.Interaction):
         """
         Slash command: Skip the current track.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.command_eskip(ctx)
-        await interaction.followup.send("Track skipped!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.command_eskip(ctx)
+            
+            try:
+                await interaction.followup.send("Track skipped!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash skip command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash skip command: {e}")
 
     @app_commands.command(name="queue", description="Show the queue")
     async def slash_queue(self, interaction: discord.Interaction):
         """
         Slash command: Show the current music queue.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.command_equeue(ctx)
-        await interaction.followup.send("Queue shown above!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.command_equeue(ctx)
+            
+            try:
+                await interaction.followup.send("Queue shown above!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash queue command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash queue command: {e}")
 
     @app_commands.command(name="repeat", description="Toggle repeat mode")
     async def slash_repeat(self, interaction: discord.Interaction):
         """
         Slash command: Toggle repeat mode for playback.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.original_cog.command_repeat(ctx)
-        await interaction.followup.send("Repeat toggled!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.original_cog.command_repeat(ctx)
+            
+            try:
+                await interaction.followup.send("Repeat toggled!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash repeat command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash repeat command: {e}")
 
     @app_commands.command(name="shuffle", description="Shuffle the queue")
     async def slash_shuffle(self, interaction: discord.Interaction):
         """
         Slash command: Shuffle the current queue.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.original_cog.command_shuffle(ctx)
-        await interaction.followup.send("Queue shuffled!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.original_cog.command_shuffle(ctx)
+            
+            try:
+                await interaction.followup.send("Queue shuffled!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash shuffle command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash shuffle command: {e}")
 
     @app_commands.command(name="volume", description="Set the volume (0-150%)")
     @app_commands.describe(volume="New volume value between 1 and 150.")
@@ -906,10 +1012,21 @@ class EnhancedAudio(commands.Cog):
         """
         Slash command: Set the playback volume.
         """
-        await interaction.response.defer(ephemeral=True)
-        ctx = await self.bot.get_context(interaction)
-        await self.original_cog.command_volume(ctx, vol=volume)
-        await interaction.followup.send(f"Volume set to {volume}%!", ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            ctx = await self.bot.get_context(interaction)
+            await self.original_cog.command_volume(ctx, vol=volume)
+            
+            try:
+                await interaction.followup.send(f"Volume set to {volume}%!", ephemeral=True)
+            except discord.HTTPException as e:
+                if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
+                    log.debug("Invalid webhook token in slash volume command")
+                    pass
+                else:
+                    raise
+        except Exception as e:
+            log.error(f"Error in slash volume command: {e}")
 
     # Playlist group (exemplo simplificado)
     playlist = app_commands.Group(name="playlist", description="Playlist commands", guild_only=True)
