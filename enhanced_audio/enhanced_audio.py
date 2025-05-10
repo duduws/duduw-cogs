@@ -273,7 +273,20 @@ class EnhancedAudioView(discord.ui.View):
         if not self.message:
             return
         try:
-            player = lavalink.get_player(self.ctx.guild.id)
+            # Check if player exists for this guild, if not stop the update task
+            try:
+                player = lavalink.get_player(self.ctx.guild.id)
+            except Exception as e:
+                if "No such player for that guild" in str(e):
+                    log.debug(f"Player no longer exists for guild {self.ctx.guild.id}, stopping updates")
+                    if self.update_task:
+                        self.update_task.cancel()
+                    self.stop()
+                    return
+                else:
+                    # Re-raise unexpected exceptions
+                    raise
+                
             guild_data = await self.cog.original_cog.config.guild(self.ctx.guild).all()
             # Gather current state for comparison
             state = {
@@ -300,11 +313,13 @@ class EnhancedAudioView(discord.ui.View):
                 except discord.NotFound:
                     if self.update_task:
                         self.update_task.cancel()
+                        self.stop()
                 except discord.HTTPException as e:
                     if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
                         log.debug("Invalid webhook token, stopping updates")
                         if self.update_task:
                             self.update_task.cancel()
+                            self.stop()
                 return
             
             # No progress tracking - just show duration
@@ -379,17 +394,25 @@ class EnhancedAudioView(discord.ui.View):
             except discord.NotFound:
                 if self.update_task:
                     self.update_task.cancel()
+                    self.stop()
             except discord.HTTPException as e:
                 if e.status == 401 and e.code == 50027:  # Invalid Webhook Token
                     log.debug("Invalid webhook token, stopping updates")
                     if self.update_task:
                         self.update_task.cancel()
+                        self.stop()
                 else:
                     # Reraise for other HTTP exceptions
                     raise
             self.timeout = 300
         except Exception as e:
             log.error(f"Error updating embed: {e}")
+            # If we get persistent errors, stop the update task
+            if "No such player for that guild" in str(e):
+                log.debug(f"Player no longer exists for guild {self.ctx.guild.id}, stopping updates")
+                if self.update_task:
+                    self.update_task.cancel()
+                self.stop()
             # Don't try to fetch the message again if there's an error
 
 
